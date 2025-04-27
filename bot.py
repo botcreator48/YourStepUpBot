@@ -1,39 +1,33 @@
-import os
-import openai
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+import logging
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# Вставь сюда свой токен
+TOKEN = 'ТВОЙ_ТОКЕН_СЮДА'
 
-openai.api_key = OPENAI_API_KEY
+# Настроим логирование (чтобы видеть ошибки/инфу)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Привет! Я твой помощник. Расскажи, что у тебя на душе.')
+# Обработчик команды /start
+async def start(update, context):
+    await update.message.reply_text('Привет! Я бот.')
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_message = update.message.text
+# Обработчик обычных сообщений
+async def echo(update, context):
+    await update.message.reply_text(update.message.text)
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Ты доброжелательный и решительный психолог-помощник. Помоги человеку разобраться в себе и найти мотивацию двигаться вперёд."},
-            {"role": "user", "content": user_message}
-        ]
-    )
+def main():
+    # Создаем приложение
+    app = Application.builder().token(TOKEN).build()
 
-    reply_text = response['choices'][0]['message']['content']
-    await update.message.reply_text(reply_text)
+    # Регистрируем обработчики
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-async def main():
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
-    app.add_handler(CommandHandler('start', start))
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-
-    print("Бот запущен...")
-    await app.run_polling()
+    # Запускаем бота
+    app.run_polling()
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
