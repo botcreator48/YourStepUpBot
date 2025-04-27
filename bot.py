@@ -2,7 +2,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
 
 # Вставь сюда свой токен
-TOKEN = 'ТВОЙ_ТОКЕН_СЮДА'
+TOKEN = '7770466925:AAGMafTugQRdkMP2YFhU96rYPszPiQvr2fk'
 
 # Настроим логирование (чтобы видеть ошибки/инфу)
 logging.basicConfig(
