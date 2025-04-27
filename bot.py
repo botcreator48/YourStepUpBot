@@ -1,33 +1,34 @@
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
-import logging
+import asyncio
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Вставь сюда свой токен
-TOKEN = '7770466925:AAFeUfA4twxJlsSGeNuPk26mrDn-QQBqtE0'
+import os
 
-# Настроим логирование (чтобы видеть ошибки/инфу)
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# Получаем токен из переменных окружения
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
-# Обработчик команды /start
-async def start(update, context):
-    await update.message.reply_text('Привет! Я бот.')
 
-# Обработчик обычных сообщений
-async def echo(update, context):
-    await update.message.reply_text(update.message.text)
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Я работаю!")
 
-def main():
-    # Создаем приложение
-    app = Application.builder().token(TOKEN).build()
 
-    # Регистрируем обработчики
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Ты сказал: {update.message.text}")
+
+
+async def main():
+    if not TOKEN:
+        print("Ошибка: токен не найден. Убедись, что TELEGRAM_TOKEN задан в настройках окружения.")
+        return
+
+    app = ApplicationBuilder().token(TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    # Запускаем бота
-    app.run_polling()
+    print("Бот запущен...")
+    await app.run_polling()
 
-if __name__ == '__main__':
-    main()
+
+if __name__ == "__main__":
+    asyncio.run(main())
