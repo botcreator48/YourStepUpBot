@@ -4,13 +4,11 @@ import openai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
-# Настройка логов
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-# Получение токенов
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -18,6 +16,7 @@ openai.api_key = OPENAI_API_KEY
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
+    logging.info(f"Новое сообщение: {user_message}")
 
     try:
         response = await openai.ChatCompletion.acreate(
@@ -25,6 +24,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             messages=[{"role": "user", "content": user_message}]
         )
         reply = response["choices"][0]["message"]["content"].strip()
+        logging.info(f"Ответ от OpenAI: {reply}")
     except Exception as e:
         logging.error(f"Ошибка при запросе к OpenAI: {e}")
         reply = "Извините, произошла ошибка. Попробуйте позже."
