@@ -5,7 +5,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 import os
 
 # Получаем токен из переменных окружения
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+TOKEN = os.getenv("7770466925: AAF1vtWtw8x—6cABnhDG2
+P3i7nw0PGxvzds")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
