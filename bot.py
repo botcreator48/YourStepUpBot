@@ -1,16 +1,16 @@
 import os
 import openai
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, ContextTypes, filters
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 openai.api_key = OPENAI_API_KEY
 
-def generate_response(user_message):
+async def generate_response(user_message):
     prompt = f"""
-Ты — ИИ-психолог. Помогаешь человеку увидеть свою боль и сделать маленький шаг вперёд. 
+Ты — ИИ-психолог. Помогаешь человеку увидеть свою боль и сделать маленький шаг вперёд.
 Говори по-человечески, честно, иногда дерзко. Короткими абзацами. Заверши ответ сильным вопросом или конкретным предложением действия.
 
 Пользователь написал: "{user_message}"
@@ -22,19 +22,17 @@ def generate_response(user_message):
     )
     return response['choices'][0]['message']['content']
 
-def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
-    response = generate_response(user_message)
-    update.message.reply_text(response)
+    response = await generate_response(user_message)
+    await update.message.reply_text(response)
 
 def main():
-    updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
-    updater.start_polling()
-    updater.idle()
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
