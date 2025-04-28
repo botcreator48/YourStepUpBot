@@ -1,63 +1,48 @@
 import logging
 import asyncio
-import openai
 import nest_asyncio
-
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+import openai
+import httpx
 
-import os
+# Настройки
+TELEGRAM_TOKEN = "ТВОЙ_ТОКЕН"
+OPENAI_API_KEY = "ТВОЙ_OPENAI_КЛЮЧ"
 
-# Настройка логирования
+# Логирование
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Получение токенов из переменных окружения
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-
+# Установка токена OpenAI
 openai.api_key = OPENAI_API_KEY
 
-# Приветственное сообщение
-WELCOME_MESSAGE = (
-    "Привет! Я твой личный ИИ-психолог, помощник и просто хороший собеседник. "
-    "Здесь ты можешь спокойно задать любой вопрос — я рядом и всегда готов поддержать тебя."
-)
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(WELCOME_MESSAGE)
-
+# Обработка сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     logger.info(f"Новое сообщение: {user_message}")
-
     try:
-        response = await get_openai_response(user_message)
-        await update.message.reply_text(response)
+        client = openai.AsyncOpenAI()
+        response = await client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Ты дружелюбный психолог."},
+                {"role": "user", "content": user_message},
+            ]
+        )
+        reply_text = response.choices[0].message.content.strip()
+        await update.message.reply_text(reply_text)
     except Exception as e:
         logger.error(f"Ошибка при запросе к OpenAI: {e}")
         await update.message.reply_text("Извините, произошла ошибка. Попробуйте позже.")
 
-async def get_openai_response(user_message):
-    response = await openai.ChatCompletion.acreate(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Ты дружелюбный и поддерживающий психолог."},
-            {"role": "user", "content": user_message},
-        ],
-        temperature=0.7,
-        max_tokens=500
-    )
-    return response['choices'][0]['message']['content']
-
-async def mai():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    logger.info("Бот запущен.")
+# Основная функция
+async def main():
+    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
     await application.run_polling()
 
-if __name__ == '__main__':
-    
+# Запуск
+if __name__ == "__main__":
+    nest_asyncio.apply()
+    asyncio.run(main())
