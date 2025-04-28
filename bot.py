@@ -1,17 +1,21 @@
 import logging
-import os
-import openai
 import asyncio
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+import openai
+import nest_asyncio
 
-# Включаем логирование
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+import os
+
+# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Устанавливаем API ключи
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Получение токенов из переменных окружения
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
 openai.api_key = OPENAI_API_KEY
 
 # Приветственное сообщение
@@ -28,23 +32,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"Новое сообщение: {user_message}")
 
     try:
-        response = await asyncio.to_thread(
-            openai.chat.completions.create,
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Ты дружелюбный психолог и собеседник."},
-                {"role": "user", "content": user_message}
-            ]
-        )
-        bot_reply = response.choices[0].message.content.strip()
-        await update.message.reply_text(bot_reply)
-
+        response = await get_openai_response(user_message)
+        await update.message.reply_text(response)
     except Exception as e:
         logger.error(f"Ошибка при запросе к OpenAI: {e}")
         await update.message.reply_text("Извините, произошла ошибка. Попробуйте позже.")
 
+async def get_openai_response(user_message):
+    response = await openai.ChatCompletion.acreate(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Ты дружелюбный и поддерживающий психолог."},
+            {"role": "user", "content": user_message},
+        ],
+        temperature=0.7,
+        max_tokens=500
+    )
+    return response['choices'][0]['message']['content']
+
 async def main():
-    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -52,5 +59,6 @@ async def main():
     logger.info("Бот запущен.")
     await application.run_polling()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    nest_asyncio.apply()
+    asyncio.get_event_loop().run_until_complete(main())
