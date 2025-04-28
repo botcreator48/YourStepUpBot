@@ -50,7 +50,7 @@ async def get_openai_response(user_message):
     )
     return response['choices'][0]['message']['content']
 
-async def main():
+async def mai():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
@@ -60,5 +60,4 @@ async def main():
     await application.run_polling()
 
 if __name__ == '__main__':
-    nest_asyncio.apply()
-    asyncio.get_event_loop().run_until_complete(main())
+    
