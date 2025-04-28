@@ -26,11 +26,7 @@ openai.api_key = OPENAI_API_KEY
 WELCOME_MESSAGE = "Привет! Я твой личный ИИ-психолог, помощник и просто хороший собеседник. Здесь ты можешь спокойно задать любой вопрос — я рядом и всегда готов поддержать тебя."
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(WELCOME_MESSAGE)
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_message = update.message.text
-    logger.info(f"Новое сообщение: {user_message}")
+    await update.message.reply_text(}")
 
     try:
         response = await ask_openai(user_message)
@@ -43,7 +39,7 @@ async def ask_openai(prompt: str) -> str:
     response = await openai.ChatCompletion.acreate(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "Ты — заботливый и понимающий психолог."},
+            {"role": "syst", "content": "Ты — заботливый и понимающий психолог."},
             {"role": "user", "content": prompt},
         ],
         temperature=0.7,
@@ -53,12 +49,3 @@ async def ask_openai(prompt: str) -> str:
 
 async def main():
     application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    logger.info("Бот запущен.")
-    await application.run_polling()
-
-if __name__ == "__main__":
-    asyncio.run(main())
