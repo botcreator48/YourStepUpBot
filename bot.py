@@ -2,41 +2,59 @@ import os
 import logging
 import openai
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Получение токенов из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# Установка ключа OpenAI
 openai.api_key = OPENAI_API_KEY
 
+# Текст приветствия
+WELCOME_MESSAGE = (
+    "Привет! Я твой личный ИИ-психолог, помощник и просто хороший собеседник. "
+    "Здесь ты можешь спокойно задать любой вопрос — я рядом и всегда готов поддержать тебя."
+)
+
+# Обработчик команды /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(WELCOME_MESSAGE)
+
+# Обработчик обычных сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
-    logging.info(f"Новое сообщение: {user_message}")
+    logger.info(f"Новое сообщение: {user_message}")
 
     try:
         response = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_message}]
+            messages=[
+                {"role": "system", "content": "Ты доброжелательный психолог, который помогает советами."},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=500,
+            temperature=0.7,
         )
-        reply = response["choices"][0]["message"]["content"].strip()
-        logging.info(f"Ответ от OpenAI: {reply}")
+        reply_text = response['choices'][0]['message']['content']
+        await update.message.reply_text(reply_text)
     except Exception as e:
-        logging.error(f"Ошибка при запросе к OpenAI: {e}")
-        reply = "Извините, произошла ошибка. Попробуйте позже."
+        logger.error(f"Ошибка при запросе к OpenAI: {e}")
+        await update.message.reply_text("Извините, произошла ошибка. Попробуйте позже.")
 
-    await update.message.reply_text(reply)
+# Основная функция
+async def main():
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-def main():
-    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
+    application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    application.run_polling()
+    await application.run_polling()
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
