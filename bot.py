@@ -8,24 +8,19 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Получение токенов из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Установка ключа OpenAI
 openai.api_key = OPENAI_API_KEY
 
-# Текст приветствия
 WELCOME_MESSAGE = (
     "Привет! Я твой личный ИИ-психолог, помощник и просто хороший собеседник. "
     "Здесь ты можешь спокойно задать любой вопрос — я рядом и всегда готов поддержать тебя."
 )
 
-# Обработчик команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(WELCOME_MESSAGE)
 
-# Обработчик обычных сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     logger.info(f"Новое сообщение: {user_message}")
@@ -46,15 +41,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Ошибка при запросе к OpenAI: {e}")
         await update.message.reply_text("Извините, произошла ошибка. Попробуйте позже.")
 
-# Основная функция
-async def main():
+def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    await application.run_polling()
+    application.run_polling()  # Без asyncio.run !!!
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    main()
